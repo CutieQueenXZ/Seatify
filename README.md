@@ -6,7 +6,7 @@ Seatify is a lightweight MCGalaxy plugin that lets players create, manage, and i
 
 It supports click-based placement, cuboid selection, ownership control, and admin tools.
 
-![Seatify preview](preview.png)
+![Seatify preview](Preview.png)
 
 ---
 
