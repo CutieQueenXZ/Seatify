@@ -59,25 +59,61 @@ It supports click-based placement, cuboid selection, ownership control, and admi
 
 ---
 
-## 📥 Installation (￣ヘ￣)
+## 📥 Installation
 
-### Requirements
-- MCGalaxy server
-- .NET-compatible build environment
+1. Download the latest release from:
+   https://github.com/CutieQueenXZ/Seatify/releases
+
+2. Put `Seatify.dll` inside your MCGalaxy `plugins` folder.
+
+Example:
+
+```bash
+MCGalaxy/plugins/Seatify.dll
+```
+
+3. Load the plugin in-game or from console:
+
+```bash
+/pload Seatify
+```
+
+Or simply restart the server.
 
 ---
 
-### Setup
+# 🛠️ Compiling
 
-1. Place `Seatify` inside your root MCGalaxy folder:
+## Requirements
+
+* MCGalaxy server
+* .NET SDK
+* `MCGalaxy_.dll`
+
+---
+
+## Setup
+
+1. Place the `Seatify` source folder next to your MCGalaxy folder.
+
+Example:
 
 ```bash
 MCGalaxy/
 Seatify/
 ```
 
-2. Build the plugin:
+2. Make sure `Seatify.csproj` points to your local `MCGalaxy_.dll`.
+
+3. Build the plugin:
 
 ```bash
 dotnet build
 ```
+
+4. The compiled plugin will appear in:
+
+```bash
+bin/Debug/net48/
+```
+
