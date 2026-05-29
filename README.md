@@ -59,7 +59,7 @@ It supports click-based placement, cuboid selection, ownership control, and admi
 
 ---
 
-## 📥 Installation
+## 📥 Installation ヽ(・∀・)ﾉ
 
 1. Download the latest release from:
    https://github.com/CutieQueenXZ/Seatify/releases
@@ -82,7 +82,7 @@ Or simply restart the server.
 
 ---
 
-# 🛠️ Compiling
+# 🛠️ Compiling ヽ(ー_ー )ノ
 
 ## Requirements
 
