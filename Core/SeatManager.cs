@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using MCGalaxy;
+using System.Linq;
 
 namespace Seatify
 {
@@ -19,27 +20,33 @@ namespace Seatify
         public static void Add(Level lvl, int x, int y, int z, string owner)
         {
             string key = lvl.name + ":" + x + ":" + y + ":" + z + ":" + owner;
-            seats.Add(key);
-            Save();
+
+            lock (seats)
+            {
+                seats.Add(key);
+                Save();
+            }
         }
+
         public static void Remove(Level lvl, int x, int y, int z)
         {
             string baseKey = Key(lvl, x, y, z);
 
-            seats.RemoveWhere(s => s.StartsWith(baseKey));
-            Save();
+            lock (seats)
+            {
+                seats.RemoveWhere(s => s.StartsWith(baseKey));
+                Save();
+            }
         }
 
         public static bool IsSeat(Level lvl, int x, int y, int z)
         {
             string baseKey = Key(lvl, x, y, z);
 
-            foreach (var s in seats)
+            lock (seats)
             {
-                if (s.StartsWith(baseKey)) return true;
+                return seats.Any(s => s.StartsWith(baseKey));
             }
-
-            return false;
         }
 
         public static void Load()
@@ -56,14 +63,17 @@ namespace Seatify
 
         public static void Save()
         {
-            Directory.CreateDirectory("plugins/Seatify");
-
-            File.WriteAllLines(file, seats);
+            lock (seats)
+            {
+                Directory.CreateDirectory("plugins/Seatify");
+                File.WriteAllLines(file, seats);
+            }
         }
 
-        public static IEnumerable<string> GetAll()
+        public static string[] GetAll()
         {
-            return seats;
+            lock (seats)
+                return seats.ToArray();
         }
 
         public static void ClearAll()
@@ -80,9 +90,10 @@ namespace Seatify
                 if (parts.Length < 4) continue;
 
                 string level = parts[0];
-                int sx = int.Parse(parts[1]);
-                int sy = int.Parse(parts[2]);
-                int sz = int.Parse(parts[3]);
+
+                if (!int.TryParse(parts[1], out int sx)) continue;
+                if (!int.TryParse(parts[2], out int sy)) continue;
+                if (!int.TryParse(parts[3], out int sz)) continue;
 
                 if (level.CaselessEq(lvl.name) && sx == x && sy == y && sz == z)
                     return parts.Length >= 5 ? parts[4] : "Unknown";

@@ -10,11 +10,6 @@ namespace Seatify
     {
         public static HashSet<string> Awaiting = new HashSet<string>();
 
-        public static class SeatInfoState
-        {
-            public static HashSet<string> ClickMode = new HashSet<string>();
-        }
-
         public static void Init()
         {
             OnPlayerClickEvent.Register(OnBlockChanged, Priority.Normal);
@@ -30,18 +25,6 @@ namespace Seatify
             {
                 CmdSeat.AddClickMode.Remove(p.name);
                 CmdSeat.HandleClick(p, x, y, z);
-                return;
-            }
-            
-            if (CmdSeat.CuboidMode.Contains(p.name))
-            {
-                HandleCuboidClick(p, x, y, z);
-                return;
-            }
-
-            if (CmdSeat.RemoveCuboidMode.Contains(p.name))
-            {
-                HandleRemoveCuboidClick(p, x, y, z);
                 return;
             }
 
@@ -91,69 +74,9 @@ namespace Seatify
             p.Message("&aSeat saved from clicked block!");
         }
 
-        static void HandleCuboidClick(Player p, ushort x, ushort y, ushort z)
-        {
-            if (CmdSeat.CuboidLock.Contains(p.name))
-            {
-                CmdSeat.CuboidLock.Remove(p.name);
-                return;
-            }
-
-            // FIRST CLICK
-            if (!CmdSeat.FirstPoint.ContainsKey(p.name))
-            {
-                CmdSeat.FirstPoint[p.name] = new Position(x, y, z);
-
-                CmdSeat.CuboidLock.Add(p.name);
-                p.Message("&aFirst point set. Now click second corner.");
-                return;
-            }
-
-            // SECOND CLICK
-            var p1 = CmdSeat.FirstPoint[p.name];
-            var p2 = new Position(x, y, z);
-
-            CmdSeat.FirstPoint.Remove(p.name);
-            CmdSeat.CuboidMode.Remove(p.name);
-
-            CmdSeat.CreateCuboidSeat(p.level, p1, p2, p.name);
-
-            p.Message("&aCuboid seat created!");
-        }
-
-        static void HandleRemoveCuboidClick(Player p, ushort x, ushort y, ushort z)
-        {
-            if (CmdSeat.CuboidLock.Contains(p.name))
-            {
-                CmdSeat.CuboidLock.Remove(p.name);
-                return;
-            }
-            if (!CmdSeat.RemoveFirstPoint.ContainsKey(p.name))
-            {
-                CmdSeat.RemoveFirstPoint[p.name] = new Position(x, y, z);
-
-                CmdSeat.CuboidLock.Add(p.name);
-                p.Message("&aFirst point set. Now click second corner.");
-                return;
-            }
-
-            var p1 = CmdSeat.RemoveFirstPoint[p.name];
-            var p2 = new Position(x, y, z);
-
-            CmdSeat.RemoveFirstPoint.Remove(p.name);
-            CmdSeat.RemoveCuboidMode.Remove(p.name);
-
-            CmdSeat.RemoveCuboidSeats(p.level, p1, p2, p);
-
-            p.Message("&aCuboid seats removed!");
-        }
-
         static void OnLeave(Player p, string reason)
         {
             Awaiting.Remove(p.name);
-
-            CmdSeat.CuboidMode.Remove(p.name);
-            CmdSeat.FirstPoint.Remove(p.name);
         }
     }
 }

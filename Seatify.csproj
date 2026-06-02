@@ -6,6 +6,7 @@
     <AssemblyName>Seatify</AssemblyName>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

@@ -10,10 +10,9 @@ namespace Seatify
 
         public override void Use(Player p, string message)
         {
-            if (SeatViewManager.Active.Contains(p.name))
+            if (SeatStateManager.Active.Contains(p.name))
             {
-                // TURN OFF
-                SeatViewManager.Active.Remove(p.name);
+                SeatStateManager.Active.Remove(p.name);
 
                 foreach (var entry in SeatManager.GetAll())
                 {
@@ -35,8 +34,7 @@ namespace Seatify
                 return;
             }
 
-            // TURN ON
-            SeatViewManager.Active.Add(p.name);
+            SeatStateManager.Active.Add(p.name);
 
             foreach (var entry in SeatManager.GetAll())
             {

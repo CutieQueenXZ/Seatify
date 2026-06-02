@@ -1,110 +1,141 @@
 using System.Collections.Generic;
+using System.IO;
 using MCGalaxy;
 
 namespace Seatify
 {
     public static class SeatStateManager
-    {
+    {   
+        static object locker = new object(); 
         public static HashSet<string> FrozenLevels = new HashSet<string>();
         static string file = "plugins/Seatify/freeze.txt";  
-        static Dictionary<string, bool> sitting = new Dictionary<string, bool>();
+        static HashSet<string> sitting = new HashSet<string>();
 
         static Dictionary<string, string> frozenReason = new Dictionary<string, string>();
 
         static Dictionary<string, string> frozenBy = new Dictionary<string, string>();
 
+        public static HashSet<string> Active = new HashSet<string>();
+
         public static bool IsSitting(string player)
         {
-            return sitting.ContainsKey(player) && sitting[player];
+            lock (locker)
+                return sitting.Contains(player);
         }
 
         public static void SetSitting(string player, bool value)
         {
-            sitting[player] = value;
+            lock (locker)
+            {
+                if (value) sitting.Add(player);
+                else sitting.Remove(player);
+            }
         }
 
         public static void Remove(string player)
         {
-            if (sitting.ContainsKey(player))
+            lock (locker)
                 sitting.Remove(player);
         }
 
         public static bool IsFrozen(string level)
         {
-            return FrozenLevels.Contains(level.ToLower());
+            lock (locker)
+                return FrozenLevels.Contains(level.ToLower());
         }
 
         public static void Freeze(string level, string player = "Unknown", string reason = "No reason")
         {
             string key = level.ToLower();
 
-            FrozenLevels.Add(key);
-            frozenBy[key] = player;
-            frozenReason[key] = reason;
-            SaveFreeze();
+            lock (locker)
+            {
+                FrozenLevels.Add(key);
+                frozenBy[key] = player;
+                frozenReason[key] = reason;
+                SaveFreeze();
+            }
         }
 
         public static void Unfreeze(string level)
         {
             string key = level.ToLower();
 
-            FrozenLevels.Remove(key);
-            frozenBy.Remove(key);
-            frozenReason.Remove(key);
-            SaveFreeze();
+            lock (locker)
+            {
+                FrozenLevels.Remove(key);
+                frozenBy.Remove(key);
+                frozenReason.Remove(key);
+                SaveFreeze();
+            }
         }
 
         public static bool CanEdit(Player p)
         {
             string level = p.level.name.ToLower();
 
-            if (!FrozenLevels.Contains(level))
-                return true;
+            lock (locker)
+            {
+                if (!FrozenLevels.Contains(level))
+                    return true;
 
-            string who = frozenBy.ContainsKey(level) ? frozenBy[level] : "Unknown";
-            string reason = frozenReason.ContainsKey(level) ? frozenReason[level] : "No reason";
+                frozenBy.TryGetValue(level, out var who);
+                frozenReason.TryGetValue(level, out var reason);
 
-            p.Message("&cSeat editing is frozen here.");
-            p.Message($"&7By: {who} | Reason: {reason}");
-            return false;
+                who ??= "Unknown";
+                reason ??= "No reason";
+
+                p.Message("&cSeat editing is frozen here.");
+                p.Message($"&7By: {who} | Reason: {reason}");
+                return false;
+            }
         }
 
         public static void LoadFreeze()
         {
-            FrozenLevels.Clear();
-            frozenBy.Clear();
-            frozenReason.Clear();
-
-            if (!System.IO.File.Exists(file)) return;
-
-            foreach (var line in System.IO.File.ReadAllLines(file))
+            lock (locker)
             {
-                var parts = line.Split(':');
-                if (parts.Length < 1) continue;
+                FrozenLevels.Clear();
+                frozenBy.Clear();
+                frozenReason.Clear();
 
-                string level = parts[0].ToLower();
-                FrozenLevels.Add(level);
+                if (!File.Exists(file)) return;
 
-                if (parts.Length >= 2)
-                    frozenBy[level] = parts[1];
+                foreach (var line in File.ReadAllLines(file))
+                {
+                    var parts = line.Split(new[] { ':' }, 3);
+                    if (parts.Length < 1) continue;
 
-                if (parts.Length >= 3)
-                    frozenReason[level] = parts[2];
+                    string level = parts[0].ToLower();
+                    FrozenLevels.Add(level);
+
+                    if (parts.Length >= 2)
+                        frozenBy[level] = parts[1];
+
+                    if (parts.Length >= 3)
+                        frozenReason[level] = parts[2];
+                }
             }
         }
+
         public static void SaveFreeze()
         {
-            var lines = new List<string>();
+            List<string> lines;
 
-            foreach (var level in FrozenLevels)
+            lock (locker)
             {
-                string by = frozenBy.ContainsKey(level) ? frozenBy[level] : "Unknown";
-                string reason = frozenReason.ContainsKey(level) ? frozenReason[level] : "No reason";
+                lines = new List<string>();
 
-                lines.Add(level + ":" + by + ":" + reason);
+                foreach (var level in FrozenLevels)
+                {
+                    string by = frozenBy.TryGetValue(level, out var b) ? b : "Unknown";
+                    string reason = frozenReason.TryGetValue(level, out var r) ? r : "No reason";
+
+                    lines.Add(level + ":" + by + ":" + reason);
+                }
+
+                File.WriteAllLines(file, lines);
             }
-
-            System.IO.File.WriteAllLines(file, lines);
         }
 
         public static string GetFrozenBy(string level)

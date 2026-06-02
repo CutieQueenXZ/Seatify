@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using BlockID = System.UInt16;
+using MCGalaxy.Drawing;
+using MCGalaxy.Maths;
 using MCGalaxy;
 using System;
 
@@ -13,13 +16,6 @@ namespace Seatify
 
         public static HashSet<string> AddClickMode = new HashSet<string>();
         public static HashSet<string> RemoveClickMode = new HashSet<string>();
-
-        public static HashSet<string> CuboidLock = new HashSet<string>();
-        public static Dictionary<string, Position> FirstPoint = new Dictionary<string, Position>();
-        public static HashSet<string> CuboidMode = new HashSet<string>();
-
-        public static HashSet<string> RemoveCuboidMode = new HashSet<string>();
-        public static Dictionary<string, Position> RemoveFirstPoint = new Dictionary<string, Position>();
 
         static bool CanModifySeat(Player p, Level lvl, int x, int y, int z)
         {
@@ -52,8 +48,7 @@ namespace Seatify
 
                         if (args[1].CaselessEq("cuboid"))
                         {
-                            CuboidMode.Add(p.name);
-                            p.Message("&eClick first corner...");
+                            p.MakeSelection(2, "%fSelecting region for %eSeat Cuboid", null, DoCuboidAdd);
                             return;
                         }
                     }
@@ -64,8 +59,7 @@ namespace Seatify
                 case "remove":
                     if (args.Length > 1 && args[1].CaselessEq("cuboid"))
                     {
-                        CmdSeat.RemoveCuboidMode.Add(p.name);
-                        p.Message("&eClick first corner of removal area...");
+                        p.MakeSelection(2, "%fSelecting region for %eSeat Cuboid", null, DoCuboidRemove);
                         return;
                     }
 
@@ -186,16 +180,15 @@ namespace Seatify
                 var parts = entry.Split(':');
                 if (parts.Length < 4) continue;
 
-                string level = parts[0];
-                int sx = int.Parse(parts[1]);
-                int sy = int.Parse(parts[2]);
-                int sz = int.Parse(parts[3]);
+                if (!parts[0].CaselessEq(lvl.name)) continue;
+                if (!int.TryParse(parts[1], out int sx)) continue;
+                if (!int.TryParse(parts[2], out int sy)) continue;
+                if (!int.TryParse(parts[3], out int sz)) continue;
 
-                if (level.CaselessEq(lvl.name) && sx == x && sy == y && sz == z)
-                {
-                    owner = parts.Length >= 5 ? parts[4] : "Unknown";
-                    break;
-                }
+                if (sx != x || sy != y || sz != z) continue;
+
+                owner = parts.Length >= 5 ? parts[4] : "Unknown";
+                break;
             }
 
             p.Message("&e--- Seat Info ---");
@@ -237,9 +230,9 @@ namespace Seatify
                 }
 
                 string levelName = parts[0];
-                int x = int.Parse(parts[1]);
-                int y = int.Parse(parts[2]);
-                int z = int.Parse(parts[3]);
+                if (!int.TryParse(parts[1], out int x)) continue;
+                if (!int.TryParse(parts[2], out int y)) continue;
+                if (!int.TryParse(parts[3], out int z)) continue;
 
                 Level lvl = LevelInfo.FindExact(levelName);
                 if (lvl == null)
@@ -311,7 +304,7 @@ namespace Seatify
 
             bool canBypass = p.Rank >= LevelPermission.Admin;
 
-            foreach (var entry in SeatManager.GetAll())
+            foreach (var entry in new List<string>(SeatManager.GetAll()))
             {
                 var parts = entry.Split(':');
                 if (parts.Length < 4) continue;
@@ -334,6 +327,36 @@ namespace Seatify
 
                 SeatManager.Remove(lvl, x, y, z);
             }
+        }
+
+        static bool DoCuboidAdd(Player p, Vec3S32[] marks, object state, BlockID block)
+        {
+            p.Message("Place or break two blocks to determine the edges.");
+            var a = marks[0];
+            var b = marks[1];
+
+            CreateCuboidSeat(p.level,
+                new Position(a.X, a.Y, a.Z),
+                new Position(b.X, b.Y, b.Z),
+                p.name);
+
+            p.Message("&aCuboid seat created!");
+            return false;
+        }
+
+        static bool DoCuboidRemove(Player p, Vec3S32[] marks, object state, BlockID block)
+        {
+            p.Message("Place or break two blocks to determine the edges.");
+            var a = marks[0];
+            var b = marks[1];
+
+            RemoveCuboidSeats(p.level,
+                new Position(a.X, a.Y, a.Z),
+                new Position(b.X, b.Y, b.Z),
+                p);
+
+            p.Message("&aCuboid seats removed!");
+            return false;
         }
 
         public override void Help(Player p)

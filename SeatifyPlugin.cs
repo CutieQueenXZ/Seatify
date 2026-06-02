@@ -141,7 +141,7 @@ namespace Seatify
             foreach (var p in PlayerInfo.Online.Items)
             {
                 if (p == null || p.Level == null) continue;
-                if (!SeatViewManager.Active.Contains(p.name)) continue;
+                if (!SeatStateManager.Active.Contains(p.name)) continue;
 
                 var shown = GetOrCreate(p.name);
 
