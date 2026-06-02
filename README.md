@@ -117,4 +117,4 @@ dotnet build
 bin/Debug/net48/
 ```
 
-also vibe coding btw
+im tired.
