@@ -25,7 +25,7 @@ namespace Seatify
             var allSeats = SeatManager.GetAll();
 
             SeatManager.ClearAll();
-            SeatViewManager.Active.Clear();
+            SeatStateManager.Active.Clear();
             SeatifyPlugin.Sitting.Clear();
 
             foreach (var pl in PlayerInfo.Online.Items)
